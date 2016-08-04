@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<head>
+  <title>Pusher Choir</title>
+  <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+  <script src="https://js.pusher.com/3.0/pusher.min.js"></script>
+  <script src="https://cdn.rawgit.com/leggetter/pusher-js-client-auth/master/dist/pusher-js-client-auth.js"></script>
+  <script>
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('<YOUR_APP_KEY>', {
+        authTransport: 'client',
+        clientAuth: {
+          key: '<YOUR_APP_KEY>',
+          secret: '<YOUR_APP_SECRET>',
+          user_id: getParameterByName('name'),
+          user_info: {}
+        },
+        cluster: 'eu'
+    });
+
+    var channel = pusher.subscribe('presence-channel');
+
+    var audio = new Audio('SD0010.mp3');
+
+    channel.bind('client-p', function(data) {
+      audio.play();
+    });
+
+    $(window).keypress(function (e) {
+      if (e.keyCode === 0 || e.keyCode === 32) {
+        e.preventDefault()
+        channel.trigger('client-p', "xyz");
+      }
+    });
+  </script>
+</head>

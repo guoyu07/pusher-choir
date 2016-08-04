@@ -18,18 +18,36 @@
     }
 
     var instruments = {
-      "chime-musical-synth-stutter": {
-        "audio": new Audio("chime-musical-synth-stutter_zkzHu_E_.mp3"),
-        "img_file": "replay-multiplayer.jpg",
-        "img_left": 100,
+      "cat": {
+        "audio": new Audio("animal_cat_meow.mp3"),
+        "img_file": "cat.png",
+        "img_left": 50,
         "img_top": 10,
       },
-      "horse-whinny": {
-        "audio": new Audio("horse-whinny-3_zyzWTbEu.mp3"),
-        "img_file": "replay-multiplayer.jpg",
-        "img_left": 400,
+      "drums": {
+        "audio": new Audio("drums-burlesque-2_Gk-iyf4d.mp3"),
+        "img_file": "drums.png",
+        "img_left": 250,
         "img_top": 10,
-      }
+      },
+      "sheep": {
+        "audio": new Audio("animal_sheep_baa.mp3"),
+        "img_file": "sheep.png",
+        "img_left": 450,
+        "img_top": 10,
+      },
+      "guitar": {
+        "audio": new Audio("bnm-0715-max-on-stinger.mp3"),
+        "img_file": "guitar.png",
+        "img_left": 650,
+        "img_top": 10,
+      },
+      "guitar2": {
+        "audio": new Audio("bnm-0715-oz-funk-stinger.mp3"),
+        "img_file": "guitar2.png",
+        "img_left": 850,
+        "img_top": 10,
+      },
     }
 
     // Enable pusher logging - don't include this in production
@@ -71,6 +89,7 @@
     $(window).keypress(function (e) {
       if (e.keyCode === 0 || e.keyCode === 32) {
         e.preventDefault()
+        instruments[nameToInstrument[playerName]].audio.play()
         soundChannel.trigger('client-p', nameToInstrument[playerName]);
       }
 
@@ -83,71 +102,78 @@
 </head>
 
 <body bgcolor="#000000">
-  <canvas id="myCanvas" width="1200" height="640"></canvas>
+  <canvas id="myCanvas" width="1138" height="640"></canvas>
 </body>
 
 <script>
   var c = document.getElementById("myCanvas");
-  c.style.backgroundColor = 'rgba(158, 167, 184, 0.2)';
   var canvas = new fabric.Canvas('myCanvas');
+  canvas.setBackgroundImage("background.png", function() {
+    // Name -> text object
+    var instrumentTextObjects = {}
 
-  // Name -> text object
-  var instrumentTextObjects = {}
-
-  // Update the state because someone has changed instrument
-  instrumentChannel.bind('client-p', function(state) {
-    console.log(state)
-    for (var instrument in state) {
-      if (state.hasOwnProperty(instrument)) {
-        console.log(state[instrument])
-        instrumentToName[instrument] = state[instrument]
-        if (instrumentToName[instrument]) {
-          instrumentTextObjects[instrument].setText(instrumentToName[instrument])
-        } else {
-          instrumentTextObjects[instrument].setText("")
+    // Update the state because someone has changed instrument
+    instrumentChannel.bind('client-p', function(state) {
+      console.log(state)
+      for (var instrument in state) {
+        if (state.hasOwnProperty(instrument)) {
+          console.log(state[instrument])
+          instrumentToName[instrument] = state[instrument]
+          if (instrumentToName[instrument]) {
+            instrumentTextObjects[instrument].setText(instrumentToName[instrument])
+          } else {
+            instrumentTextObjects[instrument].setText("")
+          }
         }
       }
+      canvas.renderAll();
+    });
+
+    for (var i in instruments) {
+      if (instruments.hasOwnProperty(i)) {
+        (function(iName, instrument) {
+          fabric.Image.fromURL(instrument.img_file, function(oImg) {
+            var text = new fabric.Text("", {
+              left: instrument.img_left + 60,
+              top: instrument.img_top + 220,
+              fontFamily: 'Impact, Charcoal, sans-serif',
+              stroke: 'red',
+              strokeWidth: 2
+            });
+            text.hasControls = false;
+            text.lockMovementX = true;
+            text.lockMovementY = true;
+            instrumentTextObjects[iName] = text
+            canvas.add(text);
+
+            oImg.left = instrument.img_left;
+            oImg.top = instrument.img_top;
+            oImg.selectable = false;
+            oImg.hasControls = false;
+            oImg.lockMovementX = true;
+            oImg.lockMovementY = true;
+            oImg.on('mousedown', function() {
+              if (instrumentToName[iName] == playerName) { // we are using, remove
+                text.setText("");
+                nameToInstrument[playerName] = null
+                instrumentToName[iName] = null
+                instrumentChannel.trigger('client-p', instrumentToName);
+              } else if (!instrumentToName[iName]) { // no player is using it, switch
+                text.setText(playerName);
+                if (nameToInstrument[playerName]) { // Remove from old instrument
+                  instrumentTextObjects[nameToInstrument[playerName]].setText("")
+                  instrumentToName[nameToInstrument[playerName]] = null
+                }
+                nameToInstrument[playerName] = iName
+                instrumentToName[iName] = playerName
+                instrumentChannel.trigger('client-p', instrumentToName);
+              }
+            });
+            canvas.add(oImg);
+          });
+        })(i, instruments[i]);
+      }
     }
-    canvas.renderAll();
   });
 
-  for (var i in instruments) {
-    if (instruments.hasOwnProperty(i)) {
-      (function(iName, instrument) {
-        fabric.Image.fromURL(instrument.img_file, function(oImg) {
-          var text = new fabric.Text("", { left: instrument.img_left, top: instrument.img_top + 200 });
-          text.hasControls = false;
-          text.lockMovementX = true;
-          text.lockMovementY = true;
-          instrumentTextObjects[iName] = text
-          canvas.add(text);
-
-          oImg.left = instrument.img_left;
-          oImg.top = instrument.img_top;
-          oImg.selectable = false;
-          oImg.hasControls = false;
-          oImg.lockMovementX = true;
-          oImg.lockMovementY = true;
-          oImg.on('mousedown', function() {
-            if (instrumentToName[iName] == playerName) { // we are using, remove
-              text.setText("");
-              nameToInstrument[playerName] = null
-              instrumentToName[iName] = null
-              instrumentChannel.trigger('client-p', instrumentToName);
-            } else if (!instrumentToName[iName]) { // no player is using it, switch
-              text.setText(playerName);
-              if (nameToInstrument[playerName]) { // Remove from old instrument
-                instrumentTextObjects[nameToInstrument[playerName]].setText("")
-                instrumentToName[nameToInstrument[playerName]] = null
-              }
-              nameToInstrument[playerName] = iName
-              instrumentToName[iName] = playerName
-              instrumentChannel.trigger('client-p', instrumentToName);
-            }
-          });
-          canvas.add(oImg);
-        });
-      })(i, instruments[i]);
-    }
-  }
 </script>

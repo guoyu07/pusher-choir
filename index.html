@@ -2,6 +2,7 @@
 <head>
   <title>Pusher Choir</title>
   <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.3/fabric.min.js"></script>
   <script src="https://js.pusher.com/3.0/pusher.min.js"></script>
   <script src="https://cdn.rawgit.com/leggetter/pusher-js-client-auth/master/dist/pusher-js-client-auth.js"></script>
   <script>
@@ -16,15 +17,35 @@
         return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
 
+    var instruments = [
+      {
+        "name": "chime-musical-synth-stutter",
+        "audio": new Audio("chime-musical-synth-stutter_zkzHu_E_.mp3"),
+        "img_file": "replay-multiplayer.jpg",
+        "img_left": 100,
+        "img_top": 10,
+      },
+      {
+        "name": "horse-whinny-3_zyzWTbEu",
+        "audio": new Audio("horse-whinny-3_zyzWTbEu.mp3"),
+        "img_file": "replay-multiplayer.jpg",
+        "img_left": 400,
+        "img_top": 10,
+      }
+    ]
+
     // Enable pusher logging - don't include this in production
     Pusher.logToConsole = true;
+
+    var playerName = getParameterByName('name')
+    var currentInstrument = null
 
     var pusher = new Pusher('<YOUR_APP_KEY>', {
         authTransport: 'client',
         clientAuth: {
           key: '<YOUR_APP_KEY>',
           secret: '<YOUR_APP_SECRET>',
-          user_id: getParameterByName('name'),
+          user_id: playerName,
           user_info: {}
         },
         cluster: 'eu'
@@ -32,17 +53,80 @@
 
     var channel = pusher.subscribe('presence-channel');
 
-    var audio = new Audio('SD0010.mp3');
+    var audio = new Audio('chime-musical-synth-stutter_zkzHu_E_.mp3');
 
     channel.bind('client-p', function(data) {
-      audio.play();
+      if (currentInstrument) {
+        // currentInstrument.audio.play();
+      }
     });
+
+    $(window).keypress(function (e) {
+      if (e.keyCode === 0 || e.keyCode === 32) {
+        e.preventDefault()
+        // channel.trigger('client-p', "xyz");
+        if (currentInstrument) { // move to bind
+          console.log(currentInstrument);
+          currentInstrument.audio.play();
+        }
+      }
+    });
+
+    var backgroundMusic = new Audio('background.mp3');
+    backgroundMusic.loop = true;
+    backgroundMusic.play();
 
     $(window).keypress(function (e) {
       if (e.keyCode === 0 || e.keyCode === 32) {
         e.preventDefault()
         channel.trigger('client-p', "xyz");
       }
+
+      if (e.keyCode === 13) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+      }
     });
   </script>
 </head>
+
+<body bgcolor="#000000">
+  <canvas id="myCanvas" width="1200" height="640"></canvas>
+</body>
+
+<script>
+  var c = document.getElementById("myCanvas");
+  c.style.backgroundColor = 'rgba(158, 167, 184, 0.2)';
+  var canvas = new fabric.Canvas('myCanvas');
+
+  // Name -> text object
+  var instrumentTextObjects = {}
+
+  for (i = 0; i < instruments.length; i++) {
+    (function(instrument) {
+      fabric.Image.fromURL(instruments[i].img_file, function(oImg) {
+        var text = new fabric.Text('hello', { left: instrument.img_left, top: instrument.img_top + 200 });
+        text.hasControls = false;
+        text.lockMovementX = true;
+        text.lockMovementY = true;
+        instrumentTextObjects[instrument.name] = text
+        canvas.add(text);
+
+        oImg.left = instrument.img_left;
+        oImg.top = instrument.img_top;
+        oImg.selectable = false;
+        oImg.hasControls = false;
+        oImg.lockMovementX = true;
+        oImg.lockMovementY = true;
+        oImg.on('mousedown', function() {
+          text.setText(playerName);
+          if (currentInstrument) {
+            instrumentTextObjects[currentInstrument.name].setText("")
+          }
+          currentInstrument = instrument
+        });
+        canvas.add(oImg);
+      });
+    })(instruments[i]);
+  }
+</script>

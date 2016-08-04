@@ -17,28 +17,34 @@
         return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
 
-    var instruments = [
-      {
-        "name": "chime-musical-synth-stutter",
+    var instruments = {
+      "chime-musical-synth-stutter": {
         "audio": new Audio("chime-musical-synth-stutter_zkzHu_E_.mp3"),
         "img_file": "replay-multiplayer.jpg",
         "img_left": 100,
         "img_top": 10,
       },
-      {
-        "name": "horse-whinny-3_zyzWTbEu",
+      "horse-whinny": {
         "audio": new Audio("horse-whinny-3_zyzWTbEu.mp3"),
         "img_file": "replay-multiplayer.jpg",
         "img_left": 400,
         "img_top": 10,
       }
-    ]
+    }
 
     // Enable pusher logging - don't include this in production
     Pusher.logToConsole = true;
 
     var playerName = getParameterByName('name')
-    var currentInstrument = null
+
+    // State
+    var nameToInstrument = {}
+    var instrumentToName = {}
+    for (var i in instruments) {
+      if (instruments.hasOwnProperty(i)) {
+        instrumentToName[i] = null
+      }
+    }
 
     var pusher = new Pusher('<YOUR_APP_KEY>', {
         authTransport: 'client',
@@ -51,25 +57,11 @@
         cluster: 'eu'
     });
 
-    var channel = pusher.subscribe('presence-channel');
+    var soundChannel = pusher.subscribe('presence-sound-channel');
+    var instrumentChannel = pusher.subscribe('presence-instrument-channel');
 
-    var audio = new Audio('chime-musical-synth-stutter_zkzHu_E_.mp3');
-
-    channel.bind('client-p', function(data) {
-      if (currentInstrument) {
-        // currentInstrument.audio.play();
-      }
-    });
-
-    $(window).keypress(function (e) {
-      if (e.keyCode === 0 || e.keyCode === 32) {
-        e.preventDefault()
-        // channel.trigger('client-p', "xyz");
-        if (currentInstrument) { // move to bind
-          console.log(currentInstrument);
-          currentInstrument.audio.play();
-        }
-      }
+    soundChannel.bind('client-p', function(inst) {
+      instruments[inst].audio.play()
     });
 
     var backgroundMusic = new Audio('background.mp3');
@@ -79,7 +71,7 @@
     $(window).keypress(function (e) {
       if (e.keyCode === 0 || e.keyCode === 32) {
         e.preventDefault()
-        channel.trigger('client-p', "xyz");
+        soundChannel.trigger('client-p', nameToInstrument[playerName]);
       }
 
       if (e.keyCode === 13) {
@@ -102,31 +94,60 @@
   // Name -> text object
   var instrumentTextObjects = {}
 
-  for (i = 0; i < instruments.length; i++) {
-    (function(instrument) {
-      fabric.Image.fromURL(instruments[i].img_file, function(oImg) {
-        var text = new fabric.Text('hello', { left: instrument.img_left, top: instrument.img_top + 200 });
-        text.hasControls = false;
-        text.lockMovementX = true;
-        text.lockMovementY = true;
-        instrumentTextObjects[instrument.name] = text
-        canvas.add(text);
+  // Update the state because someone has changed instrument
+  instrumentChannel.bind('client-p', function(state) {
+    console.log(state)
+    for (var instrument in state) {
+      if (state.hasOwnProperty(instrument)) {
+        console.log(state[instrument])
+        instrumentToName[instrument] = state[instrument]
+        if (instrumentToName[instrument]) {
+          instrumentTextObjects[instrument].setText(instrumentToName[instrument])
+        } else {
+          instrumentTextObjects[instrument].setText("")
+        }
+      }
+    }
+    canvas.renderAll();
+  });
 
-        oImg.left = instrument.img_left;
-        oImg.top = instrument.img_top;
-        oImg.selectable = false;
-        oImg.hasControls = false;
-        oImg.lockMovementX = true;
-        oImg.lockMovementY = true;
-        oImg.on('mousedown', function() {
-          text.setText(playerName);
-          if (currentInstrument) {
-            instrumentTextObjects[currentInstrument.name].setText("")
-          }
-          currentInstrument = instrument
+  for (var i in instruments) {
+    if (instruments.hasOwnProperty(i)) {
+      (function(iName, instrument) {
+        fabric.Image.fromURL(instrument.img_file, function(oImg) {
+          var text = new fabric.Text("", { left: instrument.img_left, top: instrument.img_top + 200 });
+          text.hasControls = false;
+          text.lockMovementX = true;
+          text.lockMovementY = true;
+          instrumentTextObjects[iName] = text
+          canvas.add(text);
+
+          oImg.left = instrument.img_left;
+          oImg.top = instrument.img_top;
+          oImg.selectable = false;
+          oImg.hasControls = false;
+          oImg.lockMovementX = true;
+          oImg.lockMovementY = true;
+          oImg.on('mousedown', function() {
+            if (instrumentToName[iName] == playerName) { // we are using, remove
+              text.setText("");
+              nameToInstrument[playerName] = null
+              instrumentToName[iName] = null
+              instrumentChannel.trigger('client-p', instrumentToName);
+            } else if (!instrumentToName[iName]) { // no player is using it, switch
+              text.setText(playerName);
+              if (nameToInstrument[playerName]) { // Remove from old instrument
+                instrumentTextObjects[nameToInstrument[playerName]].setText("")
+                instrumentToName[nameToInstrument[playerName]] = null
+              }
+              nameToInstrument[playerName] = iName
+              instrumentToName[iName] = playerName
+              instrumentChannel.trigger('client-p', instrumentToName);
+            }
+          });
+          canvas.add(oImg);
         });
-        canvas.add(oImg);
-      });
-    })(instruments[i]);
+      })(i, instruments[i]);
+    }
   }
 </script>

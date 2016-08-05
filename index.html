@@ -7,16 +7,6 @@
   <script src="https://cdn.rawgit.com/leggetter/pusher-js-client-auth/master/dist/pusher-js-client-auth.js"></script>
   <script>
 
-    function getParameterByName(name, url) {
-        if (!url) url = window.location.href;
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-            results = regex.exec(url);
-        if (!results) return null;
-        if (!results[2]) return '';
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-    }
-
     var instruments = {
       "cat": {
         "audio": new Audio("animal_cat_meow.mp3"),
@@ -49,11 +39,22 @@
         "img_top": 10,
       },
     }
+  </script>
+</head>
+
+<body bgcolor="#000000">
+  <canvas id="myCanvas" width="1138" height="640"></canvas>
+</body>
+
+<script>
+
+  var c = document.getElementById("myCanvas");
+  var canvas = new fabric.Canvas('myCanvas');
+
+  function mainApp() {
 
     // Enable pusher logging - don't include this in production
     Pusher.logToConsole = true;
-
-    var playerName = getParameterByName('name')
 
     // State
     var nameToInstrument = {}
@@ -101,17 +102,7 @@
         backgroundMusic.currentTime = 0;
       }
     });
-  </script>
-</head>
 
-<body bgcolor="#000000">
-  <canvas id="myCanvas" width="1138" height="640"></canvas>
-</body>
-
-<script>
-  var c = document.getElementById("myCanvas");
-  var canvas = new fabric.Canvas('myCanvas');
-  canvas.setBackgroundImage("background.png", function() {
     // Name -> text object
     var instrumentTextObjects = {}
 
@@ -191,6 +182,70 @@
         })(i, instruments[i]);
       }
     }
-  });
+  }
+
+  function nameSelection() {
+    var nameSelectBG = new fabric.Rect({
+      width: 1138, height: 640, fill: 'blue', left: 0, top: 0,
+      hoverCursor: 'default',
+      hasControls: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      selectable: false
+    });
+    canvas.add(nameSelectBG);
+
+    var instructionsText = new fabric.IText('Type your name, then click GO', {
+      left: 200,
+      top: 200,
+      hoverCursor: 'default',
+      hasControls: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      fontFamily: 'Impact, Charcoal, sans-serif',
+      selectable: false
+    });
+    canvas.add(instructionsText);
+    var textWithBackground = new fabric.IText('', {
+      textBackgroundColor: 'rgb(255,255,255)',
+      left: 200,
+      top: 250,
+      hoverCursor: 'text',
+      hasControls: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      editable: true
+    });
+    canvas.add(textWithBackground);
+    textWithBackground.enterEditing()
+    textWithBackground.hiddenTextarea.focus();
+
+    var goText = new fabric.Text('GO', {
+      left: 200,
+      top: 300,
+      fontFamily: 'Impact, Charcoal, sans-serif',
+      textDecoration: "underline",
+      hoverCursor: 'pointer',
+      hasControls: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      selectable: false
+    });
+    goText.on('mousedown', function() {
+      if (textWithBackground.getText() != '') {
+        playerName = textWithBackground.getText();
+        canvas.setBackgroundImage("background.png", function() {
+          canvas.remove(nameSelectBG);
+          canvas.remove(instructionsText);
+          canvas.remove(textWithBackground);
+          canvas.remove(goText);
+          mainApp();
+        });
+      }
+    });
+    canvas.add(goText);
+  }
+
+  nameSelection();
 
 </script>

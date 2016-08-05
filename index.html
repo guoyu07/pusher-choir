@@ -185,19 +185,20 @@
   }
 
   function nameSelection() {
-    var nameSelectBG = new fabric.Rect({
-      width: 1138, height: 640, fill: 'blue', left: 0, top: 0,
-      hoverCursor: 'default',
-      hasControls: false,
-      lockMovementX: true,
-      lockMovementY: true,
-      selectable: false
-    });
-    canvas.add(nameSelectBG);
+    // var nameSelectBG = new fabric.Rect({
+    //   width: 1138, height: 640, fill: 'blue', left: 0, top: 0,
+    //   hoverCursor: 'default',
+    //   hasControls: false,
+    //   lockMovementX: true,
+    //   lockMovementY: true,
+    //   selectable: false
+    // });
+    // canvas.add(nameSelectBG);
 
     var instructionsText = new fabric.IText('Type your name, then click GO', {
       left: 200,
       top: 200,
+      fill: 'rgb(255,255,255)',
       hoverCursor: 'default',
       hasControls: false,
       lockMovementX: true,
@@ -208,6 +209,7 @@
     canvas.add(instructionsText);
     var textWithBackground = new fabric.IText('', {
       textBackgroundColor: 'rgb(255,255,255)',
+      fontFamily: 'Impact, Charcoal, sans-serif',
       left: 200,
       top: 250,
       hoverCursor: 'text',
@@ -223,6 +225,7 @@
     var goText = new fabric.Text('GO', {
       left: 200,
       top: 300,
+      fill: 'rgb(255,255,255)',
       fontFamily: 'Impact, Charcoal, sans-serif',
       textDecoration: "underline",
       hoverCursor: 'pointer',
@@ -235,7 +238,7 @@
       if (textWithBackground.getText() != '') {
         playerName = textWithBackground.getText();
         canvas.setBackgroundImage("background.png", function() {
-          canvas.remove(nameSelectBG);
+          // canvas.remove(nameSelectBG);
           canvas.remove(instructionsText);
           canvas.remove(textWithBackground);
           canvas.remove(goText);

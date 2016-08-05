@@ -146,7 +146,12 @@
               top: instrument.img_top + 220,
               fontFamily: 'Impact, Charcoal, sans-serif',
               stroke: 'red',
-              strokeWidth: 2
+              strokeWidth: 2,
+              hasControls: false,
+              lockMovementX: true,
+              lockMovementY: true,
+              selectable: false,
+              hoverCursor: 'default'
             });
             text.hasControls = false;
             text.lockMovementX = true;
@@ -160,6 +165,7 @@
             oImg.hasControls = false;
             oImg.lockMovementX = true;
             oImg.lockMovementY = true;
+            oImg.hoverCursor = 'pointer';
             oImg.on('mousedown', function() {
               if (instrumentToName[iName] == playerName) { // we are using, remove
                 text.setText("");

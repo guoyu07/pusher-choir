@@ -178,6 +178,36 @@
       updateState(state)
     });
 
+    // Speakers
+    fabric.Image.fromURL('Speaker.gif', function(oImg) {
+      oImg.left = 267;
+      oImg.top = 492;
+      oImg.width = 100;
+      oImg.height = 100;
+      oImg.selectable = false;
+      oImg.hasControls = false;
+      oImg.lockMovementX = true;
+      oImg.lockMovementY = true;
+      oImg.hoverCursor = 'pointer';
+      canvas.add(oImg);
+      setInterval(function(){ pulse(oImg, 100, 492, 267, 20, 200) }, 800);
+    });
+
+    fabric.Image.fromURL('Speaker.gif', function(oImg) {
+      oImg.left = 420;
+      oImg.top = 465;
+      oImg.width = 100;
+      oImg.height = 100;
+      oImg.selectable = false;
+      oImg.hasControls = false;
+      oImg.lockMovementX = true;
+      oImg.lockMovementY = true;
+      oImg.hoverCursor = 'pointer';
+      canvas.add(oImg);
+      setInterval(function(){ pulse(oImg, 100, 465, 420, 20, 200) }, 800);
+    });
+
+
     for (var i in instruments) {
       if (instruments.hasOwnProperty(i)) {
         (function(iName, instrument) {
@@ -275,7 +305,7 @@
     goText.on('mousedown', function() {
       if (textWithBackground.getText() != '') {
         playerName = textWithBackground.getText();
-        canvas.setBackgroundImage("background.png", function() {
+        canvas.setBackgroundImage("background.gif", function() {
           // canvas.remove(nameSelectBG);
           canvas.remove(instructionsText);
           canvas.remove(textWithBackground);

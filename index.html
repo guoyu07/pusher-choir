@@ -132,6 +132,7 @@
     backgroundMusic.play();
 
     $(window).keypress(function (e) {
+      console.log(e)
       if (e.keyCode === 0 || e.keyCode === 32) {
         e.preventDefault()
         iName = nameToInstrument[playerName]
@@ -142,6 +143,8 @@
       }
 
       if (e.keyCode === 13) {
+        e.preventDefault()
+        console.log("stopping music")
         backgroundMusic.pause();
         backgroundMusic.currentTime = 0;
       }
@@ -306,9 +309,9 @@
       if (textWithBackground.getText() != '') {
         playerName = textWithBackground.getText();
         canvas.setBackgroundImage("background.gif", function() {
-          // canvas.remove(nameSelectBG);
           canvas.remove(instructionsText);
           canvas.remove(textWithBackground);
+          textWithBackground.exitEditing()
           canvas.remove(goText);
           mainApp();
         });

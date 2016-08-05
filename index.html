@@ -51,6 +51,43 @@
   var c = document.getElementById("myCanvas");
   var canvas = new fabric.Canvas('myCanvas');
 
+  function pulse(object, origSize, origTop, origLeft, sizeIncrease, duration) {
+    object.animate('width', '+=' + sizeIncrease.toString(), {
+      duration: duration,
+      onChange: canvas.renderAll.bind(canvas)
+    });
+    object.animate('height', '+=' + sizeIncrease.toString(), {
+      duration: duration,
+      onChange: canvas.renderAll.bind(canvas)
+    });
+    object.animate('top', '-=' + (sizeIncrease/2).toString(), {
+      duration: duration,
+      onChange: canvas.renderAll.bind(canvas)
+    });
+    object.animate('left', '-=' + (sizeIncrease/2).toString(), {
+      duration: duration,
+      onChange: canvas.renderAll.bind(canvas)
+    });
+    setTimeout(function(){
+      object.animate('width', origSize, {
+        duration: duration,
+        onChange: canvas.renderAll.bind(canvas)
+      });
+      object.animate('height', origSize, {
+        duration: duration,
+        onChange: canvas.renderAll.bind(canvas)
+      });
+      object.animate('top', origTop, {
+        duration: duration,
+        onChange: canvas.renderAll.bind(canvas)
+      });
+      object.animate('left', origLeft, {
+        duration: duration,
+        onChange: canvas.renderAll.bind(canvas)
+      });
+    }, duration);
+  }
+
   function mainApp() {
 
     // Enable pusher logging - don't include this in production
@@ -64,6 +101,9 @@
         instrumentToName[i] = null
       }
     }
+    // Name -> text object
+    var instrumentTextObjects = {}
+    var instrumentImgObjects = {}
 
     var pusher = new Pusher('<YOUR_APP_KEY>', {
         authTransport: 'client',
@@ -84,17 +124,21 @@
     soundChannel.bind('client-p', function(inst) {
       console.log("Need to play" + inst)
       instruments[inst].audio.play()
+      pulse(instrumentImgObjects[inst], 200,  instruments[inst].img_top, instruments[inst].img_left, 100, 100)
     });
 
-    var backgroundMusic = new Audio('background2.mp3');
+    var backgroundMusic = new Audio('background.mp3');
     backgroundMusic.loop = true;
     backgroundMusic.play();
 
     $(window).keypress(function (e) {
       if (e.keyCode === 0 || e.keyCode === 32) {
         e.preventDefault()
-        instruments[nameToInstrument[playerName]].audio.play()
-        soundChannel.trigger('client-p', nameToInstrument[playerName]);
+        iName = nameToInstrument[playerName]
+        instrument = instruments[iName]
+        instrument.audio.play()
+        pulse(instrumentImgObjects[iName], 200,  instrument.img_top, instrument.img_left, 100, 100)
+        soundChannel.trigger('client-p', iName);
       }
 
       if (e.keyCode === 13) {
@@ -102,9 +146,6 @@
         backgroundMusic.currentTime = 0;
       }
     });
-
-    // Name -> text object
-    var instrumentTextObjects = {}
 
     function updateState(state) {
       for (var instrument in state) {
@@ -183,6 +224,7 @@
                 stateChannel.trigger('client-p', instrumentToName);
               }
             });
+            instrumentImgObjects[iName] = oImg;
             canvas.add(oImg);
           });
         })(i, instruments[i]);
@@ -191,16 +233,6 @@
   }
 
   function nameSelection() {
-    // var nameSelectBG = new fabric.Rect({
-    //   width: 1138, height: 640, fill: 'blue', left: 0, top: 0,
-    //   hoverCursor: 'default',
-    //   hasControls: false,
-    //   lockMovementX: true,
-    //   lockMovementY: true,
-    //   selectable: false
-    // });
-    // canvas.add(nameSelectBG);
-
     var instructionsText = new fabric.IText('Type your name, then click GO', {
       left: 200,
       top: 200,

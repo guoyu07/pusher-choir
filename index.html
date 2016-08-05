@@ -76,9 +76,12 @@
     });
 
     var soundChannel = pusher.subscribe('presence-sound-channel');
-    var instrumentChannel = pusher.subscribe('presence-instrument-channel');
+    var stateChannel = pusher.subscribe('presence-state-channel');
+    // to send the state to new members, where only one person is left in this channel to avoid spamming too many events
+    var initialStateChannel = pusher.subscribe('presence-initial-state-channel');
 
     soundChannel.bind('client-p', function(inst) {
+      console.log("Need to play" + inst)
       instruments[inst].audio.play()
     });
 
@@ -112,12 +115,9 @@
     // Name -> text object
     var instrumentTextObjects = {}
 
-    // Update the state because someone has changed instrument
-    instrumentChannel.bind('client-p', function(state) {
-      console.log(state)
+    function updateState(state) {
       for (var instrument in state) {
         if (state.hasOwnProperty(instrument)) {
-          console.log(state[instrument])
           instrumentToName[instrument] = state[instrument]
           if (instrumentToName[instrument]) {
             instrumentTextObjects[instrument].setText(instrumentToName[instrument])
@@ -127,6 +127,23 @@
         }
       }
       canvas.renderAll();
+    }
+
+    // next person has joined
+    initialStateChannel.bind('pusher:member_added', function() {
+      console.log("New member")
+      if (nameToInstrument != {}) { // Have got the initial state
+        console.log("Sending initial state to new member")
+        stateChannel.trigger('client-p', instrumentToName);
+        // Now new clients will have the initial state, so we can leave
+        initialStateChannel.unsubscribe('initial-state-channel')
+      }
+    });
+
+    // Update the state because someone has changed instrument
+    stateChannel.bind('client-p', function(state) {
+      console.log("Got state, updating")
+      updateState(state)
     });
 
     for (var i in instruments) {
@@ -157,7 +174,7 @@
                 text.setText("");
                 nameToInstrument[playerName] = null
                 instrumentToName[iName] = null
-                instrumentChannel.trigger('client-p', instrumentToName);
+                stateChannel.trigger('client-p', instrumentToName);
               } else if (!instrumentToName[iName]) { // no player is using it, switch
                 text.setText(playerName);
                 if (nameToInstrument[playerName]) { // Remove from old instrument
@@ -166,7 +183,7 @@
                 }
                 nameToInstrument[playerName] = iName
                 instrumentToName[iName] = playerName
-                instrumentChannel.trigger('client-p', instrumentToName);
+                stateChannel.trigger('client-p', instrumentToName);
               }
             });
             canvas.add(oImg);

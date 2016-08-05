@@ -132,7 +132,6 @@
     backgroundMusic.play();
 
     $(window).keypress(function (e) {
-      console.log(e)
       if (e.keyCode === 0 || e.keyCode === 32) {
         e.preventDefault()
         iName = nameToInstrument[playerName]
@@ -154,6 +153,7 @@
       for (var instrument in state) {
         if (state.hasOwnProperty(instrument)) {
           instrumentToName[instrument] = state[instrument]
+          nameToInstrument[state[instrument]] = instrument
           if (instrumentToName[instrument]) {
             instrumentTextObjects[instrument].setText(instrumentToName[instrument])
           } else {
@@ -179,6 +179,15 @@
     stateChannel.bind('client-p', function(state) {
       console.log("Got state, updating")
       updateState(state)
+    });
+
+    // Remove them from the instrument
+    stateChannel.bind('pusher:member_removed', function(member) {
+      console.log("Lost member")
+      if (nameToInstrument[member.id]) {
+        instrumentToName[nameToInstrument[member.id]] = null;
+        updateState(instrumentToName);
+      }
     });
 
     // Speakers
